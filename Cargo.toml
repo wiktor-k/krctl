@@ -1,0 +1,16 @@
+[package]
+name = "krctl"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "4.4.6", features = ["derive"] }
+dir-diff = "0.3.2"
+sequoia-openpgp = "1.16.1"
+tempdir = "0.3.7"
+
+[dev-dependencies]
+rstest = "0.18.2"
+testresult = "0.3.0"
