@@ -8,7 +8,9 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.4.6", features = ["derive"] }
 dir-diff = "0.3.2"
+regex = "1.10.2"
 sequoia-openpgp = "1.16.1"
+sha256 = { version = "1.4.0", default-features = false }
 tempdir = "0.3.7"
 
 [dev-dependencies]

@@ -3,7 +3,7 @@ use sequoia_openpgp::{
     armor::{Kind, Writer},
     cert::{amalgamation::ValidAmalgamation, CertParser},
     parse::Parse,
-    policy::StandardPolicy,
+    policy::{self, StandardPolicy},
     serialize::Serialize,
     Packet,
 };
@@ -20,8 +20,11 @@ pub struct ImportCommand {
     pub output: PathBuf,
 }
 
+use regex::Regex;
+
 pub fn import(command: ImportCommand) -> std::io::Result<()> {
     let policy = StandardPolicy::new();
+    let uid_re = Regex::new(r"[^A-Za-z0-9.]").unwrap();
     let user_dir = command.output.join(command.key.file_stem().unwrap());
     eprintln!("this is upser dir: {:?}", user_dir);
     for cert in CertParser::from_file(command.key).unwrap() {
@@ -66,6 +69,24 @@ pub fn import(command: ImportCommand) -> std::io::Result<()> {
                                   bytes.finalize()?;
                               }
                 */
+            }
+            let uids_dir = cert_dir.join("uid");
+            std::fs::create_dir_all(&uids_dir)?;
+            for uid in cert.userids() {
+                let simplified_uid = format!(
+                    "{}{}",
+                    uid_re.replace_all(&uid.userid().to_string(), "_"),
+                    &sha256::digest(uid.userid().to_string())[0..8]
+                );
+                let uid_dir = uids_dir.join(&simplified_uid);
+                std::fs::create_dir_all(&uid_dir)?;
+                let uid_file = uid_dir.join(&format!("{}.asc", &simplified_uid));
+
+                let mut bytes = Writer::new(File::create(uid_file)?, Kind::File)?;
+                Packet::from(uid.component().clone())
+                    .serialize(&mut bytes)
+                    .unwrap();
+                bytes.finalize()?;
             }
             eprintln!("cert fpr dir: {:}", cert_dir.display());
         } else {
