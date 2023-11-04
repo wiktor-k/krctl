@@ -47,16 +47,28 @@ pub fn import(command: ImportCommand) -> std::io::Result<()> {
 
                 let certification_dir = subkey_dir.join("certification");
                 std::fs::create_dir_all(&certification_dir)?;
+                /*
+                                let mut binding_file = certification_dir.join(subkey.fingerprint().to_hex());
+                                binding_file.set_extension("asc");
 
-                let mut binding_file = certification_dir.join(subkey.fingerprint().to_hex());
-                binding_file.set_extension("asc");
+                                let mut bytes = Writer::new(File::create(binding_file)?, Kind::File)?;
+                                Packet::from(subkey.binding_signature().clone())
+                                    .serialize(&mut bytes)
+                                    .unwrap();
+                                bytes.finalize()?;
+                */
 
-                let mut bytes = Writer::new(File::create(binding_file)?, Kind::File)?;
-                Packet::from(subkey.binding_signature().clone())
-                    .serialize(&mut bytes)
-                    .unwrap();
-                bytes.finalize()?;
-
+                for certification in subkey.self_signatures() {
+                    let cert_file = certification_dir.join(format!(
+                        "{:X}.asc",
+                        certification.issuer_fingerprints().next().unwrap()
+                    ));
+                    let mut bytes = Writer::new(File::create(cert_file)?, Kind::File)?;
+                    Packet::from(certification.clone())
+                        .serialize(&mut bytes)
+                        .unwrap();
+                    bytes.finalize()?;
+                }
                 /*                for certification in subkey.certifications() {
                                   let mut certification_file = certification_dir
                                       .join(certification.issuer_fingerprints().next().unwrap().to_hex());
@@ -92,10 +104,6 @@ pub fn import(command: ImportCommand) -> std::io::Result<()> {
                 std::fs::create_dir_all(&certification_dir)?;
 
                 for certification in uid.self_signatures() {
-                    eprintln!(
-                        "=========>>>{}",
-                        certification.issuer_fingerprints().next().unwrap()
-                    );
                     let cert_file = certification_dir.join(format!(
                         "{:X}.asc",
                         certification.issuer_fingerprints().next().unwrap()
