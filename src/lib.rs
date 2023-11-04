@@ -87,6 +87,25 @@ pub fn import(command: ImportCommand) -> std::io::Result<()> {
                     .serialize(&mut bytes)
                     .unwrap();
                 bytes.finalize()?;
+
+                let certification_dir = uid_dir.join("certification");
+                std::fs::create_dir_all(&certification_dir)?;
+
+                for certification in uid.self_signatures() {
+                    eprintln!(
+                        "=========>>>{}",
+                        certification.issuer_fingerprints().next().unwrap()
+                    );
+                    let cert_file = certification_dir.join(format!(
+                        "{:X}.asc",
+                        certification.issuer_fingerprints().next().unwrap()
+                    ));
+                    let mut bytes = Writer::new(File::create(cert_file)?, Kind::File)?;
+                    Packet::from(certification.clone())
+                        .serialize(&mut bytes)
+                        .unwrap();
+                    bytes.finalize()?;
+                }
             }
             eprintln!("cert fpr dir: {:}", cert_dir.display());
         } else {
