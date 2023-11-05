@@ -1,9 +1,9 @@
 use clap::Parser;
 use sequoia_openpgp::{
     armor::{Kind, Writer},
-    cert::{amalgamation::ValidAmalgamation, CertParser},
+    cert::CertParser,
     parse::Parse,
-    policy::{self, StandardPolicy},
+    policy::StandardPolicy,
     serialize::Serialize,
     Packet,
 };
