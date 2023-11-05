@@ -26,7 +26,6 @@ pub fn import(command: ImportCommand) -> std::io::Result<()> {
     let policy = StandardPolicy::new();
     let uid_re = Regex::new(r"[^A-Za-z0-9@.-]").unwrap();
     let user_dir = command.output.join(command.key.file_stem().unwrap());
-    eprintln!("this is upser dir: {:?}", user_dir);
     for cert in CertParser::from_file(command.key).unwrap() {
         if let Ok(cert) = cert {
             let cert = cert.with_policy(&policy, None).unwrap();
@@ -57,16 +56,6 @@ pub fn import(command: ImportCommand) -> std::io::Result<()> {
 
                 let certification_dir = subkey_dir.join("certification");
                 std::fs::create_dir_all(&certification_dir)?;
-                /*
-                                let mut binding_file = certification_dir.join(subkey.fingerprint().to_hex());
-                                binding_file.set_extension("asc");
-
-                                let mut bytes = Writer::new(File::create(binding_file)?, Kind::File)?;
-                                Packet::from(subkey.binding_signature().clone())
-                                    .serialize(&mut bytes)
-                                    .unwrap();
-                                bytes.finalize()?;
-                */
 
                 for certification in subkey.self_signatures() {
                     let cert_file = certification_dir.join(format!(
@@ -79,18 +68,6 @@ pub fn import(command: ImportCommand) -> std::io::Result<()> {
                         .unwrap();
                     bytes.finalize()?;
                 }
-                /*                for certification in subkey.certifications() {
-                                  let mut certification_file = certification_dir
-                                      .join(certification.issuer_fingerprints().next().unwrap().to_hex());
-                                  certification_file.set_extension("asc");
-
-                                  let mut bytes = Writer::new(File::create(certification_file)?, Kind::File)?;
-                                  Packet::from(certification.clone())
-                                      .serialize(&mut bytes)
-                                      .unwrap();
-                                  bytes.finalize()?;
-                              }
-                */
             }
             let uids_dir = cert_dir.join("uid");
             std::fs::create_dir_all(&uids_dir)?;
@@ -125,9 +102,8 @@ pub fn import(command: ImportCommand) -> std::io::Result<()> {
                     bytes.finalize()?;
                 }
             }
-            eprintln!("cert fpr dir: {:}", cert_dir.display());
         } else {
-            eprintln!("err");
+            panic!("err");
         }
     }
     Ok(())

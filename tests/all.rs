@@ -14,7 +14,7 @@ fn temp_output_dir() -> PathBuf {
             .unwrap()
             .as_secs()
     ));
-    std::fs::create_dir(output.clone()).unwrap();
+    std::fs::create_dir(output.clone()).expect("tempdir creation succeed");
     //let output = output.as_path();
     output
 }
@@ -24,12 +24,14 @@ fn main(
     #[files("test-cases/*")] path: PathBuf,
     #[from(temp_output_dir)] output: PathBuf,
 ) -> TestResult {
+    eprintln!("Using temp dir for tests: {}", output.display());
     for key in path.join("input/import").read_dir()? {
         krctl::import(krctl::ImportCommand {
             key: key?.path(),
             output: output.clone(),
         })?;
     }
-    assert!(!dir_diff::is_different(output, path.join("output")).unwrap());
+    assert!(!dir_diff::is_different(output, path.join("output"))
+        .expect("directories to have the same contents"));
     Ok(())
 }
