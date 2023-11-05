@@ -24,13 +24,23 @@ use regex::Regex;
 
 pub fn import(command: ImportCommand) -> std::io::Result<()> {
     let policy = StandardPolicy::new();
-    let uid_re = Regex::new(r"[^A-Za-z0-9.]").unwrap();
+    let uid_re = Regex::new(r"[^A-Za-z0-9@.-]").unwrap();
     let user_dir = command.output.join(command.key.file_stem().unwrap());
     eprintln!("this is upser dir: {:?}", user_dir);
     for cert in CertParser::from_file(command.key).unwrap() {
         if let Ok(cert) = cert {
             let cert = cert.with_policy(&policy, None).unwrap();
             let cert_dir = user_dir.join(cert.fingerprint().to_hex());
+
+            std::fs::create_dir_all(&cert_dir)?;
+            let mut public_key_file = cert_dir.join(cert.fingerprint().to_hex());
+            public_key_file.set_extension("asc");
+            let mut bytes = Writer::new(File::create(public_key_file)?, Kind::PublicKey)?;
+            Packet::from(cert.primary_key().key().clone())
+                .serialize(&mut bytes)
+                .unwrap();
+            bytes.finalize()?;
+
             let subkeys_dir = cert_dir.join("subkey");
             std::fs::create_dir_all(&subkeys_dir)?;
             for subkey in cert.keys().subkeys() {
@@ -63,7 +73,7 @@ pub fn import(command: ImportCommand) -> std::io::Result<()> {
                         "{:X}.asc",
                         certification.issuer_fingerprints().next().unwrap()
                     ));
-                    let mut bytes = Writer::new(File::create(cert_file)?, Kind::File)?;
+                    let mut bytes = Writer::new(File::create(cert_file)?, Kind::Signature)?;
                     Packet::from(certification.clone())
                         .serialize(&mut bytes)
                         .unwrap();
@@ -108,7 +118,7 @@ pub fn import(command: ImportCommand) -> std::io::Result<()> {
                         "{:X}.asc",
                         certification.issuer_fingerprints().next().unwrap()
                     ));
-                    let mut bytes = Writer::new(File::create(cert_file)?, Kind::File)?;
+                    let mut bytes = Writer::new(File::create(cert_file)?, Kind::Signature)?;
                     Packet::from(certification.clone())
                         .serialize(&mut bytes)
                         .unwrap();
